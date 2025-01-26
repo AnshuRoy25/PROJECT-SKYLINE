@@ -1,0 +1,124 @@
+// Motor driver pin definitions
+#define IN1 D1  
+#define IN2 D2
+#define IN3 D3
+#define IN4 D4
+#define ENA D5  // PWM pin for Motor A
+#define ENB D6  // PWM pin for Motor B
+#define SERVO_PIN D7 // Servo control pin
+
+#include <Servo.h>
+
+Servo steeringServo; // Create servo object for steering
+
+// Define speed levels for gears
+const int speedLevels[6] = {170, 340, 510, 680, 850, 1023}; // PWM values for 6 gears
+int currentSpeed = speedLevels[2]; // Default to 3rd gear
+
+void setup() {
+  // Start Serial communication
+  Serial.begin(115200);
+  
+  // Set motor driver pins as outputs
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+
+  // Configure PWM
+  analogWriteRange(1023); // Set PWM range (0-1023 for ESP8266)
+
+  // Attach the servo to the defined pin
+  steeringServo.attach(SERVO_PIN);
+  steeringServo.write(90); // Set servo to middle position
+
+  // Indicate readiness
+  Serial.println("RC Car Ready. Use w/s/x for movement, a/d for steering, and 1-6 to set speed.");
+}
+
+void loop() {
+  // Check if data is available on the Serial interface
+  if (Serial.available()) {
+    char command = Serial.read(); // Read the incoming character
+    Serial.print("Command received: ");
+    Serial.println(command);
+
+    // Process commands
+    switch (command) {
+      case 'w': // Move Forward
+        moveForward();
+        break;
+      case 's': // Move Backward
+        moveBackward();
+        break;
+      case 'x': // Stop
+        stopMoving();
+        break;
+      case 'a': // Turn Servo Left
+        turnServoLeft();
+        break;
+      case 'd': // Turn Servo Right
+        turnServoRight();
+        break;
+      case '1': case '2': case '3': case '4': case '5': case '6':
+        setSpeed(command - '0'); // Set speed based on gear
+        break;
+      default:
+        Serial.println("Invalid command. Use w/s/x, a/d, or 1-6.");
+    }
+  }
+}
+
+// Function to move the robot forward
+void moveForward() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, LOW);
+  analogWrite(ENA, currentSpeed); // Set speed for ENA 
+  analogWrite(ENB, currentSpeed); // Set speed for ENB 
+  Serial.println("Moving Forward");
+}
+
+// Function to move the robot backward
+void moveBackward() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(ENA, currentSpeed); // Set speed for ENA 
+  analogWrite(ENB, currentSpeed); // Set speed for ENB 
+  Serial.println("Moving Backward");
+}
+
+// Function to stop the robot
+void stopMoving() {
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  Serial.println("Stopping");
+}
+
+// Function to set speed based on gear
+void setSpeed(int gear) {
+  if (gear >= 1 && gear <= 6) {
+    currentSpeed = speedLevels[gear - 1];
+    Serial.print("Speed set to Gear ");
+    Serial.println(gear);
+  } else {
+    Serial.println("Invalid gear!");
+  }
+}
+
+// Function to turn servo to the leftmost angle
+void turnServoLeft() {
+  steeringServo.write(180); // Set servo to leftmost position
+  Serial.println("Turning Servo Left");
+}
+
+// Function to turn servo to the rightmost angle
+void turnServoRight() {
+  steeringServo.write(0); // Set servo to rightmost position
+  Serial.println("Turning Servo Right");
+}
