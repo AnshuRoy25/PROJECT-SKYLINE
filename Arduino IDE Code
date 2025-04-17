@@ -6,7 +6,7 @@
 #define ENA D5  // PWM pin for Motor A
 #define ENB D6  // PWM pin for Motor B
 #define SERVO_PIN D7 // Servo control pin
-
+//yaha change kiya hai
 #include <Servo.h>
 
 Servo steeringServo; // Create servo object for steering
